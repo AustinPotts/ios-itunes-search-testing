@@ -8,7 +8,29 @@
 
 import Foundation
 
+
+// What can we test?
+//1. Decoding
+//2. Creating the URL
+//3. Setting the result properly and giving back an error
+
+
+
 class SearchResultController {
+    
+    // What are our Dependecies? 
+    // 1. Search Term
+    //2. Result Type
+    //3. URL Components - creating the url
+    //4. URLSession.shared
+    //5. Setting up the model and decoding
+    
+    let dataLoader: NetworkDataLoader
+    var error: Error?
+    
+    init(dataLoader: NetworkDataLoader = URLSession.shared) {
+        self.dataLoader = dataLoader
+    }
     
     func performSearch(for searchTerm: String, resultType: ResultType, completion: @escaping () -> Void) {
         
@@ -23,7 +45,8 @@ class SearchResultController {
         var request = URLRequest(url: requestURL)
         request.httpMethod = HTTPMethod.get.rawValue
         
-        let dataTask = URLSession.shared.dataTask(with: request) { (data, _, error) in
+        // Now we are using our Data Loader. Our Dependencey for URLSessions is removed
+        dataLoader.loadData(using: request) { (data, _, error) in
             
             if let error = error { NSLog("Error fetching data: \(error)") }
             guard let data = data else { completion(); return }
@@ -34,11 +57,12 @@ class SearchResultController {
                 self.searchResults = searchResults.results
             } catch {
                 print("Unable to decode data into object of type [SearchResult]: \(error)")
+                self.error = error
             }
             
             completion()
         }
-        dataTask.resume()
+       
     }
     
     let baseURL = URL(string: "https://itunes.apple.com/search")!
